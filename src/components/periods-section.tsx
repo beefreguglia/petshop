@@ -1,4 +1,6 @@
 import { Cloud, Moon, Sun } from 'lucide-react';
+
+import { AppoitmentCard } from '@/components/appoitment-card';
 import type { AppointmentsPeriod } from '@/types/appointments';
 
 const periodsIcons = {
@@ -27,14 +29,12 @@ export function PeriodsSection({ period }: PeriodsSectionProps) {
       {period.appointments.length > 0 ? (
         <div className="px-5">
           <div>
-            <div className="mb-2 grid grid-cols-2 text-content-secondary text-label-small-size md:hidden">
-              <div className="text-left">Horario</div>
-              <div className="text-right">Paciente</div>
-            </div>
             {period.appointments.map((appointment, i) => (
-              <div key={i} className="">
-                {appointment.petName}
-              </div>
+              <AppoitmentCard
+                key={i}
+                appointment={appointment}
+                isFirstInSection={i === 0}
+              />
             ))}
           </div>
         </div>
