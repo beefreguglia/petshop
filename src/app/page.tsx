@@ -1,4 +1,10 @@
 import { PeriodsSection } from '@/components/periods-section';
+import type { Appointment as AppointmentPrisma } from '@/generated/prisma/client';
+import type {
+  Appointment,
+  AppointmentPeriodDay,
+  AppointmentsPeriod,
+} from '@/types/appointments';
 
 const appointments = [
   {
@@ -35,7 +41,66 @@ const appointments = [
   },
 ];
 
+function getPeriod(hour: number): AppointmentPeriodDay {
+  if (hour >= 9 && hour < 12) {
+    return 'morning';
+  }
+  if (hour >= 13 && hour < 18) {
+    return 'afternoon';
+  }
+  return 'evening';
+}
+
+function groupAppointmentsByPeriod(
+  appointments: AppointmentPrisma[]
+): AppointmentsPeriod[] {
+  const transformedAppoitments: Appointment[] = appointments.map(
+    (appointment) => ({
+      ...appointment,
+      time: appointment.scheduleAt.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      service: appointment.description,
+      period: getPeriod(appointment.scheduleAt.getHours()),
+    })
+  );
+
+  const morningAppointments = transformedAppoitments.filter(
+    (appointment) => appointment.period === 'morning'
+  );
+  const afternoonAppointments = transformedAppoitments.filter(
+    (appointment) => appointment.period === 'afternoon'
+  );
+  const eveningAppointments = transformedAppoitments.filter(
+    (appointment) => appointment.period === 'evening'
+  );
+
+  return [
+    {
+      title: 'Manhã',
+      type: 'morning',
+      timeRange: '09h-12h',
+      appointments: morningAppointments,
+    },
+    {
+      title: 'Tarde',
+      type: 'afternoon',
+      timeRange: '13h-18h',
+      appointments: afternoonAppointments,
+    },
+    {
+      title: 'Noite',
+      type: 'evening',
+      timeRange: '19h-21h',
+      appointments: eveningAppointments,
+    },
+  ];
+}
+
 export default function Home() {
+  const periods = groupAppointmentsByPeriod(appointments);
+
   return (
     <div className="bg-background-primary p-6">
       <div className="flex items-center justify-between md:mb-8">
@@ -48,7 +113,11 @@ export default function Home() {
           </p>
         </div>
       </div>
-      <PeriodsSection period={[]} />
+      <div className="pb-24 md:pb-0">
+        {periods.map((period) => (
+          <PeriodsSection key={period.type} period={period} />
+        ))}
+      </div>
     </div>
   );
 }
