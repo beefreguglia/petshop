@@ -1,2 +1,2 @@
-export * from './appointment-mock';
 export * from './appointment-utils';
+export * from './time-options';

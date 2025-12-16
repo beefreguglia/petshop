@@ -4,7 +4,7 @@ import { AppointmentForm } from '@/components/appoitment-form';
 import { DatePicker } from '@/components/date-picker';
 import { PeriodsSection } from '@/components/periods-section';
 import { Button } from '@/components/ui/button';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { groupAppointmentsByPeriod } from '@/utils';
 
 type HomeProps = {

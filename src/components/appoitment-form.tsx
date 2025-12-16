@@ -15,7 +15,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'sonner';
-import z from 'zod';
+import { z } from 'zod';
+
 import { createAppointment, updateAppointment } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -51,21 +52,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Appointment } from '@/types/appointments';
-
-const generateTimeOptions = (): string[] => {
-  const times = [];
-
-  for (let hour = 9; hour <= 21; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      if (hour === 21 && minute > 0) break;
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      times.push(timeString);
-    }
-  }
-
-  return times;
-};
-const TIME_OPTIONS = generateTimeOptions();
+import { TIME_OPTIONS } from '@/utils';
 
 const appointmentFormSchema = z
   .object({
