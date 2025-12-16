@@ -60,56 +60,77 @@ export async function createAppointment(data: AppointmentData) {
     return { appointment };
   } catch (error) {
     console.error(error);
+    return { error: 'Erro ao criar agendamento. Tente novamente.' };
   }
 }
 
 export async function updateAppointment(id: string, data: AppointmentData) {
-  const parsedData = appointmentSchema.parse(data);
+  try {
+    const parsedData = appointmentSchema.parse(data);
 
-  const { description, petName, phone, scheduleAt, tutorName } = parsedData;
+    const { description, petName, phone, scheduleAt, tutorName } = parsedData;
 
-  const hour = scheduleAt.getHours();
+    const hour = scheduleAt.getHours();
 
-  const isMorning = hour >= 9 && hour < 12;
-  const isAfternoon = hour >= 13 && hour < 18;
-  const isEvening = hour >= 19 && hour < 21;
+    const isMorning = hour >= 9 && hour < 12;
+    const isAfternoon = hour >= 13 && hour < 18;
+    const isEvening = hour >= 19 && hour < 21;
 
-  if (!isMorning && !isAfternoon && !isEvening) {
-    return {
-      error:
-        'Agendamento só podem ser feitos entre 9h e 12h, 13h e 18h, ou entre 19h e 21h.',
-    };
-  }
+    if (!isMorning && !isAfternoon && !isEvening) {
+      return {
+        error:
+          'Agendamento só podem ser feitos entre 9h e 12h, 13h e 18h, ou entre 19h e 21h.',
+      };
+    }
 
-  const existingAppointment = await prisma.appointment.findFirst({
-    where: {
-      scheduleAt,
-      id: {
-        not: id,
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        scheduleAt,
+        id: {
+          not: id,
+        },
       },
-    },
-  });
+    });
 
-  if (existingAppointment) {
-    return {
-      error: 'Este horario já está reservado.',
-    };
+    if (existingAppointment) {
+      return {
+        error: 'Este horario já está reservado.',
+      };
+    }
+
+    const updatedAppointment = await prisma.appointment.update({
+      where: {
+        id,
+      },
+      data: {
+        tutorName,
+        petName,
+        phone,
+        description,
+        scheduleAt,
+      },
+    });
+
+    revalidatePath('/');
+
+    return { updatedAppointment };
+  } catch (error) {
+    console.log(error);
+    return { error: 'Erro ao editar agendamento. Tente novamente.' };
   }
+}
 
-  const updatedAppointment = await prisma.appointment.update({
-    where: {
-      id,
-    },
-    data: {
-      tutorName,
-      petName,
-      phone,
-      description,
-      scheduleAt,
-    },
-  });
+export async function deleteAppointment(id: string) {
+  try {
+    await prisma.appointment.delete({
+      where: {
+        id,
+      },
+    });
 
-  revalidatePath('/');
-
-  return { updatedAppointment };
+    revalidatePath('/');
+  } catch (error) {
+    console.log(error);
+    return { error: 'Erro ao deletar agendamento. Tente novamente.' };
+  }
 }
