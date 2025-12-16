@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/popover';
 import { DatePickerNavigationButton } from './date-picker-navigation-button';
 
-export const DatePicker = () => {
+export function DatePicker() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -113,4 +113,4 @@ export const DatePicker = () => {
       </DatePickerNavigationButton>
     </div>
   );
-};
+}
