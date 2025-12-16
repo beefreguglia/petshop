@@ -11,10 +11,12 @@ import {
   Phone,
   User,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'sonner';
 import { z } from 'zod';
+
 import { createAppointment } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -78,6 +80,9 @@ const appointmentFormSchema = z
 type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
 
 export function AppointmentForm() {
+  const [isCreateAppointmentDialogOpen, setIsCreateAppointmentDialogOpen] =
+    useState(false);
+
   const form = useForm<AppointmentFormValues>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues: {
@@ -103,7 +108,7 @@ export function AppointmentForm() {
     const scheduleAtWithTime = new Date(scheduleAt);
     scheduleAtWithTime.setHours(Number(hour), Number(minute), 0, 0);
 
-    await createAppointment({
+    const result = await createAppointment({
       description,
       petName,
       phone,
@@ -111,11 +116,21 @@ export function AppointmentForm() {
       scheduleAt: scheduleAtWithTime,
     });
 
+    if (result?.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    setIsCreateAppointmentDialogOpen(false);
     toast.success('Agendamento criado com sucesso!');
+    form.reset();
   }
 
   return (
-    <Dialog>
+    <Dialog
+      open={isCreateAppointmentDialogOpen}
+      onOpenChange={setIsCreateAppointmentDialogOpen}
+    >
       <DialogTrigger asChild>
         <Button variant="brand">Novo Agendamento</Button>
       </DialogTrigger>

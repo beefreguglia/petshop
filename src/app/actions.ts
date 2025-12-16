@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 
@@ -53,6 +54,8 @@ export async function createAppointment(data: AppointmentData) {
         scheduleAt,
       },
     });
+
+    revalidatePath('/');
 
     return { appointment };
   } catch (error) {
