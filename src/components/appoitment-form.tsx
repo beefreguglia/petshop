@@ -11,7 +11,7 @@ import {
   Phone,
   User,
 } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'sonner';
@@ -51,6 +51,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import type { Appointment } from '@/types/appointments';
 import { TIME_OPTIONS } from '@/utils/time-options';
 
 const appointmentFormSchema = z
@@ -79,7 +80,15 @@ const appointmentFormSchema = z
 
 type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
 
-export function AppointmentForm() {
+type AppointmentFormProps = {
+  appointment?: Appointment;
+  children?: ReactNode;
+};
+
+export function AppointmentForm({
+  appointment,
+  children,
+}: AppointmentFormProps) {
   const [isCreateAppointmentDialogOpen, setIsCreateAppointmentDialogOpen] =
     useState(false);
 
@@ -126,14 +135,17 @@ export function AppointmentForm() {
     form.reset();
   }
 
+  useEffect(() => {
+    form.reset(appointment);
+  }, [form, appointment]);
+
   return (
     <Dialog
       open={isCreateAppointmentDialogOpen}
       onOpenChange={setIsCreateAppointmentDialogOpen}
     >
-      <DialogTrigger asChild>
-        <Button variant="brand">Novo Agendamento</Button>
-      </DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
+
       <DialogContent
         variant="appointment"
         overlayVariant="blurred"
