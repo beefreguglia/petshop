@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
+import { toast } from 'sonner';
 import { z } from 'zod';
-
+import { createAppointment } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -89,8 +90,28 @@ export function AppointmentForm() {
     },
   });
 
-  function onSubmit(data: AppointmentFormValues) {
-    console.log(data);
+  async function onSubmit({
+    description,
+    petName,
+    phone,
+    tutorName,
+    scheduleAt,
+    time,
+  }: AppointmentFormValues) {
+    const [hour, minute] = time.split(':');
+
+    const scheduleAtWithTime = new Date(scheduleAt);
+    scheduleAtWithTime.setHours(Number(hour), Number(minute), 0, 0);
+
+    await createAppointment({
+      description,
+      petName,
+      phone,
+      tutorName,
+      scheduleAt: scheduleAtWithTime,
+    });
+
+    toast.success('Agendamento criado com sucesso!');
   }
 
   return (
