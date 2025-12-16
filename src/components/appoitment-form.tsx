@@ -11,13 +11,12 @@ import {
   Phone,
   User,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { IMaskInput } from 'react-imask';
 import { toast } from 'sonner';
-import { z } from 'zod';
-
-import { createAppointment } from '@/app/actions';
+import z from 'zod';
+import { createAppointment, updateAppointment } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -52,17 +51,35 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Appointment } from '@/types/appointments';
-import { TIME_OPTIONS } from '@/utils/time-options';
+
+const generateTimeOptions = (): string[] => {
+  const times = [];
+
+  for (let hour = 9; hour <= 21; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      if (hour === 21 && minute > 0) break;
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      times.push(timeString);
+    }
+  }
+
+  return times;
+};
+const TIME_OPTIONS = generateTimeOptions();
 
 const appointmentFormSchema = z
   .object({
     tutorName: z.string().min(3, 'O nome do tutor é obrigatório'),
     petName: z.string().min(3, 'O nome do pet é obrigatório'),
-    phone: z.string().min(11, 'O número de telefone é obrigatório'),
+    phone: z.string().min(11, 'O telefone é obrigatório'),
     description: z.string().min(3, 'A descrição é obrigatória'),
     scheduleAt: z
-      .date({ error: 'A data é obrigatória' })
-      .min(startOfToday(), { message: 'A data não pode ser no passado' }),
+      .date({
+        error: 'A data é obrigatória',
+      })
+      .min(startOfToday(), {
+        message: 'A data não pode ser no passado',
+      }),
     time: z.string().min(1, 'A hora é obrigatória'),
   })
   .refine(
@@ -72,27 +89,28 @@ const appointmentFormSchema = z
         setHours(data.scheduleAt, Number(hour)),
         Number(minute)
       );
-
       return scheduleDateTime > new Date();
     },
-    { path: ['time'], error: 'O horario não pode ser no passado' }
+    {
+      path: ['time'],
+      error: 'O horário não pode ser no passado',
+    }
   );
 
-type AppointmentFormValues = z.infer<typeof appointmentFormSchema>;
+type AppointFormValues = z.infer<typeof appointmentFormSchema>;
 
 type AppointmentFormProps = {
   appointment?: Appointment;
-  children?: ReactNode;
+  children?: React.ReactNode;
 };
 
-export function AppointmentForm({
+export const AppointmentForm = ({
   appointment,
   children,
-}: AppointmentFormProps) {
-  const [isCreateAppointmentDialogOpen, setIsCreateAppointmentDialogOpen] =
-    useState(false);
+}: AppointmentFormProps) => {
+  const [isOpen, setIsOpen] = useState(false);
 
-  const form = useForm<AppointmentFormValues>({
+  const form = useForm<AppointFormValues>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues: {
       tutorName: '',
@@ -104,46 +122,43 @@ export function AppointmentForm({
     },
   });
 
-  async function onSubmit({
-    description,
-    petName,
-    phone,
-    tutorName,
-    scheduleAt,
-    time,
-  }: AppointmentFormValues) {
-    const [hour, minute] = time.split(':');
+  const onSubmit = async (data: AppointFormValues) => {
+    const [hour, minute] = data.time.split(':');
 
-    const scheduleAtWithTime = new Date(scheduleAt);
-    scheduleAtWithTime.setHours(Number(hour), Number(minute), 0, 0);
+    const scheduleAt = new Date(data.scheduleAt);
+    scheduleAt.setHours(Number(hour), Number(minute), 0, 0);
 
-    const result = await createAppointment({
-      description,
-      petName,
-      phone,
-      tutorName,
-      scheduleAt: scheduleAtWithTime,
-    });
+    const isEdit = !!appointment?.id;
+
+    const result = isEdit
+      ? await updateAppointment(appointment.id, {
+          ...data,
+          scheduleAt,
+        })
+      : await createAppointment({
+          ...data,
+          scheduleAt,
+        });
 
     if (result?.error) {
       toast.error(result.error);
       return;
     }
 
-    setIsCreateAppointmentDialogOpen(false);
-    toast.success('Agendamento criado com sucesso!');
+    toast.success(
+      `Agendamento ${isEdit ? 'atualizado' : 'criado'} com sucesso!`
+    );
+
+    setIsOpen(false);
     form.reset();
-  }
+  };
 
   useEffect(() => {
     form.reset(appointment);
-  }, [form, appointment]);
+  }, [appointment, form]);
 
   return (
-    <Dialog
-      open={isCreateAppointmentDialogOpen}
-      onOpenChange={setIsCreateAppointmentDialogOpen}
-    >
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
 
       <DialogContent
@@ -154,9 +169,10 @@ export function AppointmentForm({
         <DialogHeader>
           <DialogTitle size="modal">Agende um atendimento</DialogTitle>
           <DialogDescription size="modal">
-            Preencha os dados do cliente para realizar o agendamento.
+            Preencha os dados do cliente para realizar o agendamento:
           </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -226,9 +242,9 @@ export function AppointmentForm({
                         size={20}
                       />
                       <IMaskInput
-                        className="flex h-12 w-full rounded-md border border-border-primary bg-background-tertiary px-3 py-2 pl-10 text-content-primary text-sm ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-content-secondary hover:border-border-secondary focus:border-border-brand focus-visible:border-border-brand focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border-brand focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20"
                         placeholder="(99) 99999-9999"
                         mask="(00) 00000-0000"
+                        className="flex h-12 w-full rounded-md border border-border-primary bg-background-tertiary px-3 py-2 pl-10 text-content-primary text-sm ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-content-secondary hover:border-border-secondary focus:border-border-brand focus-visible:border-border-brand focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border-brand focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20"
                         {...field}
                       />
                     </div>
@@ -288,7 +304,7 @@ export function AppointmentForm({
                                 <span>Selecione uma data</span>
                               )}
                             </div>
-                            <ChevronDownIcon className="size-4 opacity-50" />
+                            <ChevronDownIcon className="h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -301,7 +317,6 @@ export function AppointmentForm({
                         />
                       </PopoverContent>
                     </Popover>
-
                     <FormMessage />
                   </FormItem>
                 )}
@@ -322,7 +337,7 @@ export function AppointmentForm({
                       >
                         <SelectTrigger>
                           <div className="flex items-center gap-2">
-                            <Clock className="size-4 text-content-brand" />
+                            <Clock className="h-4 w-4 text-content-brand" />
                             <SelectValue placeholder="--:-- --" />
                           </div>
                         </SelectTrigger>
@@ -340,17 +355,17 @@ export function AppointmentForm({
                 )}
               />
             </div>
+
             <div className="flex justify-end">
               <Button
-                variant="brand"
                 type="submit"
+                variant="brand"
                 disabled={form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="mx-2 size-4 animate-spin text-content-primary" />
-                ) : (
-                  'Agendar'
+                {form.formState.isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
+                Agendar
               </Button>
             </div>
           </form>
@@ -358,4 +373,4 @@ export function AppointmentForm({
       </DialogContent>
     </Dialog>
   );
-}
+};
