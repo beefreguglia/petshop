@@ -17,7 +17,7 @@ const interTight = Inter_Tight({
 });
 
 export const metadata: Metadata = {
-  title: 'Mundo pet',
+  title: 'MundoPet',
   description:
     'Aqui você pode ver todos os clientes e serviços agendados para hoje.',
 };

@@ -1,11 +1,31 @@
+import { endOfDay, parseISO, startOfDay } from 'date-fns';
+
 import { AppointmentForm } from '@/components/appoitment-form';
+import { DatePicker } from '@/components/date-picker';
 import { PeriodsSection } from '@/components/periods-section';
 import { Button } from '@/components/ui/button';
 import prisma from '@/lib/prisma';
 import { groupAppointmentsByPeriod } from '@/utils';
 
-export default async function Home() {
-  const appointments = await prisma.appointment.findMany();
+type HomeProps = {
+  searchParams: Promise<{ date?: string }>;
+};
+
+export default async function Home({ searchParams }: HomeProps) {
+  const { date } = await searchParams;
+  const selectedDate = date ? parseISO(date) : new Date();
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      scheduleAt: {
+        gte: startOfDay(selectedDate),
+        lte: endOfDay(selectedDate),
+      },
+    },
+    orderBy: {
+      scheduleAt: 'asc',
+    },
+  });
 
   const periods = groupAppointmentsByPeriod(appointments);
 
@@ -20,6 +40,12 @@ export default async function Home() {
             Aqui você pode ver todos os clientes e serviços agendados para hoje.
           </p>
         </div>
+        <div className="hidden items-center gap-4 md:flex">
+          <DatePicker />
+        </div>
+      </div>
+      <div className="mt-3 mb-8 md:hidden">
+        <DatePicker />
       </div>
       <div className="pb-24 md:pb-0">
         {periods.map((period) => (
