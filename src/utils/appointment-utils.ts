@@ -15,18 +15,26 @@ export function getPeriod(hour: number): AppointmentPeriodDay {
   return 'evening';
 }
 
+export function formatDateTime(date: Date): string {
+  return date.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'America/Sao_Paulo',
+  });
+}
+
 export function groupAppointmentsByPeriod(
   appointments: AppointmentPrisma[]
 ): AppointmentsPeriod[] {
   const transformedAppoitments: Appointment[] = appointments.map(
     (appointment) => ({
       ...appointment,
-      time: appointment.scheduleAt.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      time: formatDateTime(appointment.scheduleAt),
       service: appointment.description,
-      period: getPeriod(appointment.scheduleAt.getHours()),
+      period: getPeriod(
+        Number.parseInt(formatDateTime(appointment.scheduleAt))
+      ),
     })
   );
 

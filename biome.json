@@ -36,7 +36,8 @@
       "correctness": {
         "useExhaustiveDependencies": "off",
         "useUniqueElementIds": "off",
-        "noNestedComponentDefinitions": "off"
+        "noNestedComponentDefinitions": "off",
+        "useParseIntRadix": "off"
       },
       "nursery": {
         "useSortedClasses": {

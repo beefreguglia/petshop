@@ -31,7 +31,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <div className="bg-background-primary p-6">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-4">
         <div>
           <h1 className="mb-2 text-content-primary text-title-size">
             Sua agenda
